@@ -2,8 +2,8 @@
 
 #?(:clj (def ^:const double-array-type (Class/forName "[D")))
 #?(:clj (def ^:const double-double-array-type (Class/forName "[[D")))
-#?(:clj (def ^:const long-array-type (Class/forName "[L")))
-#?(:clj (def ^:const long-long-array-type (Class/forName "[[L")))
+#?(:clj (def ^:const long-array-type (Class/forName "[J")))
+#?(:clj (def ^:const long-long-array-type (Class/forName "[[J")))
 
 #?(:clj
    (defn seq->double-array
