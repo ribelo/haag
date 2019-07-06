@@ -12,16 +12,18 @@
 #?(:clj
    (extend-protocol SeqToPrimitive
      clojure.lang.PersistentVector
-     (seq->doubles ^doubles [seq] (double-array seq))
+     (seq->double-array ^doubles [seq] (double-array seq))
+     (seq->long-array ^longs [seq] (long-array seq))
      clojure.lang.LazySeq
-     (seq->doubles ^doubles [seq] (double-array seq))))
+     (seq->double-array ^doubles [seq] (double-array seq))
+     (seq->long-array ^longs [seq] (long-array seq))))
 
 #?(:clj
  (extend-type (Class/forName "[D")
    SeqToPrimitive
-   (seq->doubles ^doubles [^doubles arr] arr)))
+   (seq->double-array ^doubles [^doubles arr] arr)))
 
 #?(:clj
  (extend-type (Class/forName "[J")
    SeqToPrimitive
-   (seq->doubles ^longs [^longs arr] arr)))
+   (seq->long-array ^longs [^longs arr] arr)))
