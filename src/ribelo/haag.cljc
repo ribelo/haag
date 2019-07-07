@@ -1,5 +1,5 @@
 (ns ribelo.haag
-  (:refer-clojure :exclude [first last take take-last]))
+  (:refer-clojure :exclude [first last take take-last reductions]))
 
 #?(:clj (def ^:const double-array-type (Class/forName "[D")))
 #?(:clj (def ^:const double-double-array-type (Class/forName "[[D")))
@@ -32,7 +32,8 @@
   (last [arr])
   (slice [arr start stop] [arr start])
   (take [arr n])
-  (take-last [arr n]))
+  (take-last [arr n])
+  (reductions [arr f]))
 
 #?(:clj
    (extend-protocol Series
@@ -59,4 +60,13 @@
        (java.util.Arrays/copyOfRange ^doubles arr (int 0) (int n)))
      (take-last [arr n]
        (java.util.Arrays/copyOfRange
-        ^doubles arr (dec (- (alength ^doubles arr) n)) (alength ^doubles arr)))))
+        ^doubles arr (dec (- (alength ^doubles arr) n)) (alength ^doubles arr)))
+     (reductions [arr f]
+       (let [n (alength arr)
+             r (double-array n)]
+         (loop [i 0 b 0.0]
+           (if (< i n)
+             (let [^double tmp (f b (aget ^doubles  arr i))]
+               (aset r i tmp)
+               (recur (inc i) tmp))
+             r))))))
