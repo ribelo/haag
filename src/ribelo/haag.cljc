@@ -57,10 +57,10 @@
         (java.util.Arrays/copyOfRange ^doubles arr (int start) (alength ^doubles arr))))
      (take
        [arr n]
-       (java.util.Arrays/copyOfRange ^doubles arr (int 0) (int n)))
+       (java.util.Arrays/copyOfRange ^doubles arr (int 0) (Math/min (int n) (alength ^doubles arr))))
      (take-last [arr n]
        (java.util.Arrays/copyOfRange
-        ^doubles arr (dec (- (alength ^doubles arr) n)) (alength ^doubles arr)))
+        ^doubles arr (Math/max 0 (- (alength ^doubles arr) n)) (alength ^doubles arr)))
      (reductions [arr f]
        (let [n (alength arr)
              r (double-array n)]
