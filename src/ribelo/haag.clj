@@ -106,7 +106,7 @@
             (recur (inc i) tmp))
           r)))))
 
-(extend-type (Class/forName "[L")
+(extend-type (Class/forName "[J")
   Series
   (first [arr] (aget ^longs arr 0))
   (last [arr]
