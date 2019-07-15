@@ -6,28 +6,37 @@
 
 (set! *warn-on-reflection* true)
 
+(float-array [1 2 3])
+
 (def ^:const double-array-type (Class/forName "[D"))
 (def ^:const double-double-array-type (Class/forName "[[D"))
+(def ^:const float-array-type (Class/forName "[F"))
+(def ^:const float-float-array-type (Class/forName "[[F"))
 (def ^:const long-array-type (Class/forName "[J"))
 (def ^:const long-long-array-type (Class/forName "[[J"))
 
 (defprotocol SeqToPrimitive
   (seq->double-array [seq])
-  (seq->long-array [seq]))
+  (seq->long-array [seq])
+  (seq->float-array [seq]))
 
 (extend-protocol SeqToPrimitive
   java.util.Collection
-  clojure.lang.PersistentVector
-  (seq->double-array ^doubles [seq] (double-array seq))
-  (seq->long-array ^longs [seq] (long-array seq)))
+  (seq->double-array [seq] (double-array seq))
+  (seq->long-array   [seq] (long-array seq))
+  (seq->float-array  [seq] (float-array seq)))
 
 (extend-type (Class/forName "[D")
   SeqToPrimitive
-  (seq->double-array ^doubles [arr] arr))
+  (seq->double-array [arr] arr))
+
+(extend-type (Class/forName "[F")
+  SeqToPrimitive
+  (seq->float-array [arr] arr))
 
 (extend-type (Class/forName "[J")
   SeqToPrimitive
-  (seq->long-array ^longs [arr] arr))
+  (seq->long-array [arr] arr))
 
 (defprotocol Series
   (first [arr])
@@ -66,7 +75,59 @@
           r (double-array n)]
       (loop [i 0 b 0.0]
         (if (p/< i n)
-          (let [tmp (double (f b (aget ^doubles  arr i)))]
+          (let [tmp (double (f b (aget ^doubles arr i)))]
+            (aset r i tmp)
+            (recur (inc i) tmp))
+          r)))))
+
+(extend-type (Class/forName "[F")
+  Series
+  (first [arr] (aget ^floats arr 0))
+  (last [arr]
+    (aget ^floats arr (p/dec (alength ^floats arr))))
+  (slice
+    ([arr start stop]
+     (java.util.Arrays/copyOfRange ^floats arr (p/int start) (p/int stop)))
+    ([arr start]
+     (java.util.Arrays/copyOfRange ^floats arr (p/int start) (alength ^floats arr))))
+  (take
+    [arr n]
+    (java.util.Arrays/copyOfRange ^floats arr (p/int 0) (p/min (p/int n) (alength ^floats arr))))
+  (take-last [arr ^long n]
+    (java.util.Arrays/copyOfRange
+     ^floats arr (p/max 0 (p/- (alength ^floats arr) n)) (alength ^floats arr)))
+  (reductions [^floats arr f]
+    (let [n (alength ^floats arr)
+          r (float-array n)]
+      (loop [i 0 b 0.0]
+        (if (p/< i n)
+          (let [tmp (float (f b (aget ^floats arr i)))]
+            (aset r i tmp)
+            (recur (inc i) tmp))
+          r)))))
+
+(extend-type (Class/forName "[L")
+  Series
+  (first [arr] (aget ^longs arr 0))
+  (last [arr]
+    (aget ^longs arr (p/dec (alength ^longs arr))))
+  (slice
+    ([arr start stop]
+     (java.util.Arrays/copyOfRange ^longs arr (p/int start) (p/int stop)))
+    ([arr start]
+     (java.util.Arrays/copyOfRange ^longs arr (p/int start) (alength ^longs arr))))
+  (take
+    [arr n]
+    (java.util.Arrays/copyOfRange ^longs arr (p/int 0) (p/min (p/int n) (alength ^longs arr))))
+  (take-last [arr ^long n]
+    (java.util.Arrays/copyOfRange
+     ^longs arr (p/max 0 (p/- (alength ^longs arr) n)) (alength ^longs arr)))
+  (reductions [^longs arr f]
+    (let [n (alength ^longs arr)
+          r (long-array n)]
+      (loop [i 0 b 0.0]
+        (if (p/< i n)
+          (let [tmp (long (f b (aget ^longs arr i)))]
             (aset r i tmp)
             (recur (inc i) tmp))
           r)))))
