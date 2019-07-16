@@ -6,14 +6,26 @@
 
 (set! *warn-on-reflection* true)
 
-(float-array [1 2 3])
-
+(def ^:const double-type Double/TYPE)
 (def ^:const double-array-type (Class/forName "[D"))
 (def ^:const double-double-array-type (Class/forName "[[D"))
+(def ^:const float-type Float/TYPE)
 (def ^:const float-array-type (Class/forName "[F"))
 (def ^:const float-float-array-type (Class/forName "[[F"))
+(def ^:const long-type Long/TYPE)
 (def ^:const long-array-type (Class/forName "[J"))
 (def ^:const long-long-array-type (Class/forName "[[J"))
+
+(def dtype
+  {:double              double-type
+   :double-array        double-array-type
+   :double-double-array double-double-array-type
+   :float               float-type
+   :float-array         float-array-type
+   :float-float-array   float-float-array-type
+   :long                long-type
+   :long-array          long-array-type
+   :long-long-array     long-long-array-type})
 
 (defprotocol SeqToPrimitive
   (seq->double-array [seq])
