@@ -85,7 +85,7 @@
   (reductions [^doubles arr f]
     (let [n (alength ^doubles arr)
           r (double-array n)]
-      (loop [i 0 b 0.0]
+      (loop [i 0 b 1.0]
         (if (p/< i n)
           (let [tmp (double (f b (aget ^doubles arr i)))]
             (aset r i tmp)
@@ -111,7 +111,7 @@
   (reductions [^floats arr f]
     (let [n (alength ^floats arr)
           r (float-array n)]
-      (loop [i 0 b 0.0]
+      (loop [i 0 b 1.0]
         (if (p/< i n)
           (let [tmp (float (f b (aget ^floats arr i)))]
             (aset r i tmp)
@@ -137,7 +137,7 @@
   (reductions [^longs arr f]
     (let [n (alength ^longs arr)
           r (long-array n)]
-      (loop [i 0 b 0]
+      (loop [i 0 b 1]
         (if (p/< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
             (aset r i tmp)
