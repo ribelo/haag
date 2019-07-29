@@ -137,7 +137,7 @@
   (reductions [^longs arr f]
     (let [n (alength ^longs arr)
           r (long-array n)]
-      (loop [i 0 b 0.0]
+      (loop [i 0 b 0]
         (if (p/< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
             (aset r i tmp)
