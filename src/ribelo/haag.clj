@@ -1,8 +1,12 @@
 (ns ribelo.haag
   (:refer-clojure
-   :exclude [first last take take-last reductions])
+   :exclude [first last take take-last reductions every some])
   (:require
    [primitive-math :as p]))
+
+(comment
+  (def arr (double-array (repeatedly 1e6 #(- (rand) 0.5))))
+  (require '[criterium.core :refer [quick-bench]]))
 
 (set! *warn-on-reflection* true)
 
@@ -56,7 +60,8 @@
   (slice [arr start stop] [arr start])
   (take [arr n])
   (take-last [arr n])
-  (reductions [arr f]))
+  (reductions [arr f])
+  (every [arr pred]))
 
 (extend-protocol Series
   java.util.Collection
@@ -89,8 +94,24 @@
         (if (p/< i n)
           (let [tmp (double (f b (aget ^doubles arr i)))]
             (aset r i tmp)
-            (recur (inc i) tmp))
-          r)))))
+            (recur (p/inc i) tmp))
+          r))))
+  (every [^doubles arr pred]
+    (let [n (alength ^doubles arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if ^boolean (pred (aget ^doubles arr i))
+            (recur (p/inc i))
+            false)
+          true))))
+  (asome [arr pred]
+    (let [n (alength ^doubles arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if-not ^boolean (pred (aget ^doubles arr i))
+            (recur (p/inc i))
+            true)
+          false)))))
 
 (extend-type (Class/forName "[F")
   Series
@@ -115,8 +136,24 @@
         (if (p/< i n)
           (let [tmp (float (f b (aget ^floats arr i)))]
             (aset r i tmp)
-            (recur (inc i) tmp))
-          r)))))
+            (recur (p/inc i) tmp))
+          r))))
+  (every [^floats arr pred]
+    (let [n (alength ^floats arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if ^boolean (pred (aget ^floats arr i))
+            (recur (p/inc i))
+            false)
+          true))))
+  (asome [arr pred]
+    (let [n (alength ^floats arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if-not ^boolean (pred (aget ^floats arr i))
+            (recur (p/inc i))
+            true)
+          false)))))
 
 (extend-type (Class/forName "[J")
   Series
@@ -141,5 +178,21 @@
         (if (p/< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
             (aset r i tmp)
-            (recur (inc i) tmp))
-          r)))))
+            (recur (p/inc i) tmp))
+          r))))
+  (every [^longs arr pred]
+    (let [n (alength ^longs arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if ^boolean (pred (aget ^longs arr i))
+            (recur (p/inc i))
+            false)
+          true))))
+  (asome [arr pred]
+    (let [n (alength ^longs arr)]
+      (loop [i 0]
+        (if (p/< i n)
+          (if-not ^boolean (pred (aget ^longs arr i))
+            (recur (p/inc i))
+            true)
+          false)))))
