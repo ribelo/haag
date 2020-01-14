@@ -1,3 +1,1 @@
-{:paths   ["src"]
- :deps    {primitive-math {:mvn/version "0.1.6"}}
- :aliases {:dev {:extra-deps {org.clojure/clojure {:mvn/version "1.10.1"}}}}}
+{:paths ["src"]}

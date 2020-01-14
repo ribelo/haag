@@ -1,14 +1,14 @@
 (ns ribelo.haag
   (:refer-clojure
-   :exclude [first last take take-last reductions every some])
-  (:require
-   [primitive-math :as p]))
+   :exclude [first last take take-last reductions every some]))
+
+(set! *unchecked-math* :warn-on-boxed)
+(set! *warn-on-reflection* true)
 
 (comment
   (def arr (double-array (repeatedly 1e6 #(- (rand) 0.5))))
   (require '[criterium.core :refer [quick-bench]]))
 
-(set! *warn-on-reflection* true)
 
 (def ^:const double-type Double/TYPE)
 (def ^:const double-array-type (Class/forName "[D"))
@@ -75,41 +75,41 @@
   Series
   (first [arr] (aget ^doubles arr 0))
   (last [arr]
-    (aget ^doubles arr (p/dec (alength ^doubles arr))))
+    ^double (aget ^doubles arr (unchecked-dec-int (alength ^doubles arr))))
   (slice
-    ([arr start stop]
-     (java.util.Arrays/copyOfRange ^doubles arr (p/int start) (p/int stop)))
-    ([arr start]
-     (java.util.Arrays/copyOfRange ^doubles arr (p/int start) (alength ^doubles arr))))
+    ([arr ^long start ^long stop]
+     (java.util.Arrays/copyOfRange ^doubles arr start stop))
+    ([arr ^long start]
+     (java.util.Arrays/copyOfRange ^doubles arr start (alength ^doubles arr))))
   (take
-    [arr n]
-    (java.util.Arrays/copyOfRange ^doubles arr (p/int 0) (p/min (p/int n) (alength ^doubles arr))))
+    [arr ^long n]
+    (java.util.Arrays/copyOfRange ^doubles arr 0 (Math/min (int n) (alength ^doubles arr))))
   (take-last [arr ^long n]
     (java.util.Arrays/copyOfRange
-     ^doubles arr (p/max 0 (p/- (alength ^doubles arr) n)) (alength ^doubles arr)))
-  (reductions [^doubles arr f]
+     ^doubles arr (Math/max 0 (- (alength ^doubles arr) n)) (alength ^doubles arr)))
+  (reductions [arr f]
     (let [n (alength ^doubles arr)
           r (double-array n)]
       (loop [i 0 b 1.0]
-        (if (p/< i n)
+        (if (< i n)
           (let [tmp (double (f b (aget ^doubles arr i)))]
             (aset r i tmp)
-            (recur (p/inc i) tmp))
+            (recur (unchecked-inc i) tmp))
           r))))
-  (every [^doubles arr pred]
+  (every [arr pred]
     (let [n (alength ^doubles arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if ^boolean (pred (aget ^doubles arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             false)
           true))))
   (asome [arr pred]
     (let [n (alength ^doubles arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if-not ^boolean (pred (aget ^doubles arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             true)
           false)))))
 
@@ -117,82 +117,83 @@
   Series
   (first [arr] (aget ^floats arr 0))
   (last [arr]
-    (aget ^floats arr (p/dec (alength ^floats arr))))
+    (aget ^floats arr (unchecked-dec (alength ^floats arr))))
   (slice
-    ([arr start stop]
-     (java.util.Arrays/copyOfRange ^floats arr (p/int start) (p/int stop)))
-    ([arr start]
-     (java.util.Arrays/copyOfRange ^floats arr (p/int start) (alength ^floats arr))))
+    ([arr ^long start ^long stop]
+     (java.util.Arrays/copyOfRange ^floats arr start stop))
+    ([arr ^long start]
+     (java.util.Arrays/copyOfRange ^floats arr start (alength ^floats arr))))
   (take
-    [arr n]
-    (java.util.Arrays/copyOfRange ^floats arr (p/int 0) (p/min (p/int n) (alength ^floats arr))))
+    [arr ^long n]
+    (java.util.Arrays/copyOfRange ^floats arr 0 (Math/min (int n) (alength ^floats arr))))
   (take-last [arr ^long n]
     (java.util.Arrays/copyOfRange
-     ^floats arr (p/max 0 (p/- (alength ^floats arr) n)) (alength ^floats arr)))
-  (reductions [^floats arr f]
+     ^floats arr (Math/max 0 (- (alength ^floats arr) n)) (alength ^floats arr)))
+  (reductions [arr f]
     (let [n (alength ^floats arr)
           r (float-array n)]
       (loop [i 0 b 1.0]
-        (if (p/< i n)
+        (if (< i n)
           (let [tmp (float (f b (aget ^floats arr i)))]
             (aset r i tmp)
-            (recur (p/inc i) tmp))
+            (recur (unchecked-inc i) tmp))
           r))))
-  (every [^floats arr pred]
+  (every [arr pred]
     (let [n (alength ^floats arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if ^boolean (pred (aget ^floats arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             false)
           true))))
   (asome [arr pred]
     (let [n (alength ^floats arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if-not ^boolean (pred (aget ^floats arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             true)
           false)))))
+
 
 (extend-type (Class/forName "[J")
   Series
   (first [arr] (aget ^longs arr 0))
   (last [arr]
-    (aget ^longs arr (p/dec (alength ^longs arr))))
+    (aget ^longs arr (unchecked-dec (alength ^longs arr))))
   (slice
-    ([arr start stop]
-     (java.util.Arrays/copyOfRange ^longs arr (p/int start) (p/int stop)))
-    ([arr start]
-     (java.util.Arrays/copyOfRange ^longs arr (p/int start) (alength ^longs arr))))
+    ([arr ^long start ^long stop]
+     (java.util.Arrays/copyOfRange ^longs arr start stop))
+    ([arr ^long start]
+     (java.util.Arrays/copyOfRange ^longs arr start (alength ^longs arr))))
   (take
-    [arr n]
-    (java.util.Arrays/copyOfRange ^longs arr (p/int 0) (p/min (p/int n) (alength ^longs arr))))
+    [arr ^long n]
+    (java.util.Arrays/copyOfRange ^longs arr 0 (Math/min (unchecked-int n) (alength ^longs arr))))
   (take-last [arr ^long n]
     (java.util.Arrays/copyOfRange
-     ^longs arr (p/max 0 (p/- (alength ^longs arr) n)) (alength ^longs arr)))
-  (reductions [^longs arr f]
+     ^longs arr (Math/max 0 (- (alength ^longs arr) n)) (alength ^longs arr)))
+  (reductions [arr f]
     (let [n (alength ^longs arr)
           r (long-array n)]
       (loop [i 0 b 1]
-        (if (p/< i n)
+        (if (< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
             (aset r i tmp)
-            (recur (p/inc i) tmp))
+            (recur (unchecked-inc i) tmp))
           r))))
-  (every [^longs arr pred]
+  (every [arr pred]
     (let [n (alength ^longs arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if ^boolean (pred (aget ^longs arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             false)
           true))))
   (asome [arr pred]
     (let [n (alength ^longs arr)]
       (loop [i 0]
-        (if (p/< i n)
+        (if (< i n)
           (if-not ^boolean (pred (aget ^longs arr i))
-            (recur (p/inc i))
+            (recur (unchecked-inc i))
             true)
           false)))))
