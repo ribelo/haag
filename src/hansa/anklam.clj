@@ -1,4 +1,4 @@
-(ns hxl.anklam
+(ns hansa.haag
   (:refer-clojure
    :exclude [first last take take-last reductions every some]))
 
