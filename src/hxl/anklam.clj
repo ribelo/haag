@@ -1,14 +1,9 @@
-(ns ribelo.haag
+(ns hxl.anklam
   (:refer-clojure
    :exclude [first last take take-last reductions every some]))
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
-
-(comment
-  (def arr (double-array (repeatedly 1e6 #(- (rand) 0.5))))
-  (require '[criterium.core :refer [quick-bench]]))
-
 
 (def ^:const double-type Double/TYPE)
 (def ^:const double-array-type (Class/forName "[D"))
