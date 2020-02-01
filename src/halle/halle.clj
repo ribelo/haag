@@ -1,4 +1,4 @@
-(ns hansa.haag
+(ns hansa.halle
   (:refer-clojure
    :exclude [first last take take-last reductions every some]))
 
