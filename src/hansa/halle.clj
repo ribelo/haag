@@ -3,7 +3,6 @@
    :exclude [first last take take-last reductions every some]))
 
 (set! *unchecked-math* :warn-on-boxed)
-(set! *warn-on-reflection* true)
 
 (def ^:const double-type Double/TYPE)
 (def ^:const double-array-type (Class/forName "[D"))
@@ -15,27 +14,28 @@
 (def ^:const long-array-type (Class/forName "[J"))
 (def ^:const long-long-array-type (Class/forName "[[J"))
 
-(def dtype
-  {:double              double-type
-   :double-array        double-array-type
-   :double-double-array double-double-array-type
-   :float               float-type
-   :float-array         float-array-type
-   :float-float-array   float-float-array-type
-   :long                long-type
-   :long-array          long-array-type
-   :long-long-array     long-long-array-type})
-
 (defprotocol SeqToPrimitive
   (seq->double-array [seq])
+  (seq->double-double-array [seq])
   (seq->long-array [seq])
-  (seq->float-array [seq]))
+  (seq->long-long-array [seq])
+  (seq->float-array [seq])
+  (seq->float-float-array [seq]))
 
 (extend-protocol SeqToPrimitive
   java.util.Collection
-  (seq->double-array [seq] (double-array seq))
-  (seq->long-array   [seq] (long-array seq))
-  (seq->float-array  [seq] (float-array seq)))
+  (seq->double-array [seq]
+    (double-array seq))
+  (seq->double-double-array [seq]
+    (into-array double-array-type (mapv seq->double-array seq)))
+  (seq->long-array [seq]
+    (long-array seq))
+  (seq->long-long-array [seq]
+    (into-array long-array-type (mapv seq->long-array seq)))
+  (seq->float-array [seq]
+    (float-array seq))
+  (seq->float-float-array [seq]
+    (into-array float-array-type (mapv seq->float-array seq))))
 
 (extend-type (Class/forName "[D")
   SeqToPrimitive
@@ -48,6 +48,18 @@
 (extend-type (Class/forName "[J")
   SeqToPrimitive
   (seq->long-array [arr] arr))
+
+(extend-type (Class/forName "[[D")
+  SeqToPrimitive
+  (seq->double-double-array [arr] arr))
+
+(extend-type (Class/forName "[[F")
+  SeqToPrimitive
+  (seq->float-float-array [arr] arr))
+
+(extend-type (Class/forName "[[J")
+  SeqToPrimitive
+  (seq->long-long-array [arr] arr))
 
 (defprotocol Series
   (first [arr])
@@ -149,7 +161,6 @@
             (recur (unchecked-inc i))
             true)
           false)))))
-
 
 (extend-type (Class/forName "[J")
   Series
