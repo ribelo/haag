@@ -14,13 +14,23 @@
 (def ^:const long-array-type (Class/forName "[J"))
 (def ^:const long-long-array-type (Class/forName "[[J"))
 
+(defn double-array? [arr] (= (type arr) double-array-type))
+(defn double-double-array? [arr] (= (type arr) double-double-array-type))
+(defn float-array? [arr] (= (type arr) float-array-type))
+(defn float-float-array? [arr] (= (type arr) float-float-array-type))
+(defn long-array? [arr] (= (type arr) long-array-type))
+(defn long-long-array? [arr] (= (type arr) long-long-array-type))
+
 (defprotocol SeqToPrimitive
   (seq->double-array [seq])
   (seq->double-double-array [seq])
   (seq->long-array [seq])
   (seq->long-long-array [seq])
   (seq->float-array [seq])
-  (seq->float-float-array [seq]))
+  (seq->float-float-array [seq])
+  (seq->double-array-or-copy [seq])
+  (seq->long-array-or-copy [seq])
+  (seq->float-array-or-copy [seq]))
 
 (extend-protocol SeqToPrimitive
   java.util.Collection
@@ -35,19 +45,28 @@
   (seq->float-array [seq]
     (float-array seq))
   (seq->float-float-array [seq]
-    (into-array float-array-type (mapv seq->float-array seq))))
+    (into-array float-array-type (mapv seq->float-array seq)))
+  (seq->double-array-or-copy [seq]
+    (double-array seq))
+  (seq->float-array-or-copy [seq]
+    (float-array seq))
+  (seq->long-array-or-copy [seq]
+    (long-array seq)))
 
 (extend-type (Class/forName "[D")
   SeqToPrimitive
-  (seq->double-array [arr] arr))
+  (seq->double-array [arr] arr)
+  (seq->double-array-or-copy [arr] (double-array arr)))
 
 (extend-type (Class/forName "[F")
   SeqToPrimitive
-  (seq->float-array [arr] arr))
+  (seq->float-array [arr] arr)
+  (seq->float-array-or-copy [arr] (float-array arr)))
 
 (extend-type (Class/forName "[J")
   SeqToPrimitive
-  (seq->long-array [arr] arr))
+  (seq->long-array [arr] arr)
+  (seq->long-array-or-copy [arr] (long-array arr)))
 
 (extend-type (Class/forName "[[D")
   SeqToPrimitive
