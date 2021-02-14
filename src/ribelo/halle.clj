@@ -1,7 +1,8 @@
-(ns hanse.halle
+(ns ribelo.halle
   (:refer-clojure
    :exclude [first last take take-last reductions every some]))
 
+(set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 
 (def ^:const double-type Double/TYPE)
@@ -56,17 +57,20 @@
 (extend-type (Class/forName "[D")
   SeqToPrimitive
   (seq->double-array [arr] arr)
-  (seq->double-array-or-copy [arr] (double-array arr)))
+  (seq->double-array-or-copy [arr]
+    (java.util.Arrays/copyOfRange ^doubles arr 0 (alength ^doubles arr))))
 
 (extend-type (Class/forName "[F")
   SeqToPrimitive
   (seq->float-array [arr] arr)
-  (seq->float-array-or-copy [arr] (float-array arr)))
+  (seq->float-array-or-copy [arr]
+    (java.util.Arrays/copyOfRange ^floats arr 0 (alength ^floats arr))))
 
 (extend-type (Class/forName "[J")
   SeqToPrimitive
   (seq->long-array [arr] arr)
-  (seq->long-array-or-copy [arr] (long-array arr)))
+  (seq->long-array-or-copy [arr]
+    (java.util.Arrays/copyOfRange ^longs arr 0 (alength ^longs arr))))
 
 (extend-type (Class/forName "[[D")
   SeqToPrimitive
@@ -87,24 +91,41 @@
   (take [arr n])
   (take-last [arr n])
   (reductions [arr f])
-  (every [arr pred]))
+  (every [arr pred])
+  (some [arr pred]))
 
 (extend-protocol Series
   java.util.Collection
   (first [coll] (clojure.core/first coll))
   (last [coll] (clojure.core/last coll))
-  (slice [coll start stop] (subvec coll start stop))
-  (take [coll n] (clojure.core/take n coll))
-  (take-last [coll n] (clojure.core/take-last n coll)))
+  (slice [coll start stop]
+    (let [arr (seq->double-array coll)]
+      (slice arr start stop)))
+  (take [coll n]
+    (let [arr (seq->double-array coll)]
+      (take arr n)))
+  (take-last [coll n]
+    (let [arr (seq->double-array coll)]
+      (take-last arr n)))
+  (reductions [coll f]
+    (let [arr (seq->double-array coll)]
+      (reductions arr f)))
+  (every [coll f]
+    (let [arr (seq->double-array coll)]
+      (every arr f)))
+  (some [coll f]
+    (let [arr (seq->double-array coll)]
+      (some arr f))))
 
 (extend-type (Class/forName "[D")
   Series
-  (first [arr] (aget ^doubles arr 0))
+  (first [arr]
+    (aget ^doubles arr 0))
   (last [arr]
     ^double (aget ^doubles arr (unchecked-dec-int (alength ^doubles arr))))
   (slice
     ([arr ^long start ^long stop]
-     (java.util.Arrays/copyOfRange ^doubles arr start stop))
+     (java.util.Arrays/copyOfRange ^doubles arr start (Math/min (int stop) (alength ^doubles arr))))
     ([arr ^long start]
      (java.util.Arrays/copyOfRange ^doubles arr start (alength ^doubles arr))))
   (take
@@ -130,7 +151,7 @@
             (recur (unchecked-inc i))
             false)
           true))))
-  (asome [arr pred]
+  (some [arr pred]
     (let [n (alength ^doubles arr)]
       (loop [i 0]
         (if (< i n)
@@ -146,7 +167,7 @@
     (aget ^floats arr (unchecked-dec (alength ^floats arr))))
   (slice
     ([arr ^long start ^long stop]
-     (java.util.Arrays/copyOfRange ^floats arr start stop))
+     (java.util.Arrays/copyOfRange ^floats arr start (Math/min (int stop) (alength ^floats arr))))
     ([arr ^long start]
      (java.util.Arrays/copyOfRange ^floats arr start (alength ^floats arr))))
   (take
@@ -188,12 +209,12 @@
     (aget ^longs arr (unchecked-dec (alength ^longs arr))))
   (slice
     ([arr ^long start ^long stop]
-     (java.util.Arrays/copyOfRange ^longs arr start stop))
+     (java.util.Arrays/copyOfRange ^longs arr start (Math/min (int stop) (alength ^longs arr))))
     ([arr ^long start]
      (java.util.Arrays/copyOfRange ^longs arr start (alength ^longs arr))))
   (take
     [arr ^long n]
-    (java.util.Arrays/copyOfRange ^longs arr 0 (Math/min (unchecked-int n) (alength ^longs arr))))
+    (java.util.Arrays/copyOfRange ^longs arr 0 (Math/min (int n) (alength ^longs arr))))
   (take-last [arr ^long n]
     (java.util.Arrays/copyOfRange
      ^longs arr (Math/max 0 (- (alength ^longs arr) n)) (alength ^longs arr)))
