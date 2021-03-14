@@ -1,6 +1,8 @@
 (ns ribelo.halle
   (:refer-clojure
-   :exclude [first last take take-last reductions every some map reduce vec double-array long-array]))
+   :exclude [first last take take-last reductions every some map reduce vec double-array long-array])
+  (:require
+   [clojure.core :as clj]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -197,7 +199,7 @@
      ^doubles arr (Math/max 0 (- (alength ^doubles arr) n)) (alength ^doubles arr)))
   (-reductions [arr f]
     (let [n (alength ^doubles arr)
-          r (double-array n)]
+          r (clj/double-array n)]
       (loop [i 0 b 1.0]
         (if (< i n)
           (let [tmp (double (f b (aget ^doubles arr i)))]
@@ -223,13 +225,13 @@
   (-map
     ([arr f]
      (let [n (alength ^doubles arr)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^doubles arr)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i))))
@@ -237,20 +239,20 @@
   (-map
     ([arr f]
      (let [n (alength ^doubles arr)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^doubles a1)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i))))
        r))
     ([a1 a2 arr3 f]
      (let [n (alength ^doubles a1)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i)
@@ -258,7 +260,7 @@
        r))
     ([a1 a2 arr3 arr4 f]
      (let [n (alength ^doubles a1)
-           r (double-array n)]
+           r (clj/double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i)
@@ -309,7 +311,7 @@
      ^longs arr (Math/max 0 (- (alength ^longs arr) n)) (alength ^longs arr)))
   (-reductions [arr f]
     (let [n (alength ^longs arr)
-          r (long-array n)]
+          r (clj/long-array n)]
       (loop [i 0 b 1]
         (if (< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
@@ -335,20 +337,20 @@
   (-map
     ([arr f]
      (let [n (alength ^longs arr)
-           r (long-array n)]
+           r (clj/long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^longs a1)
-           r (long-array n)]
+           r (clj/long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i))))
        r))
     ([a1 a2 arr3 f]
      (let [n (alength ^longs a1)
-           r (long-array n)]
+           r (clj/long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i)
@@ -356,7 +358,7 @@
        r))
     ([a1 a2 arr3 arr4 f]
      (let [n (alength ^longs a1)
-           r (long-array n)]
+           r (clj/long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i)
@@ -388,8 +390,3 @@
                   (recur (unchecked-inc-int i2)))))
             (recur (unchecked-inc-int i1)))
           ro)))))
-
-(let [coll  (mapv (fn [x] (vec (repeat 10 x))) (range 10))
-      arr2d (double-double-array coll)]
-  [ (apply mapv vector coll)
-   (transpose arr2d)])
