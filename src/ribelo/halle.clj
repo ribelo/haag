@@ -1,6 +1,6 @@
 (ns ribelo.halle
   (:refer-clojure
-   :exclude [first last take take-last reductions every some map reduce]))
+   :exclude [first last take take-last reductions every some map reduce vec double-array long-array]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -18,47 +18,88 @@
 (defn long-long-array? [arr] (= (type arr) long-long-array-type))
 
 (defprotocol SeqToPrimitive
-  (seq->double-array [seq])
-  (seq->double-double-array [seq])
-  (seq->long-array [seq])
-  (seq->long-long-array [seq])
-  (seq->double-array-or-copy [seq])
-  (seq->long-array-or-copy [seq]))
+  (double-array         [xs])
+  (double-double-array  [xs])
+  (long-array           [xs])
+  (long-long-array      [xs])
+  (double-array-or-copy [xs])
+  (long-array-or-copy   [xs])
+  (vec                  [arr]))
 
 (extend-protocol SeqToPrimitive
   java.util.Collection
-  (seq->double-array [seq]
-    (double-array seq))
-  (seq->double-double-array [seq]
-    (into-array double-array-type (mapv seq->double-array seq)))
-  (seq->long-array [seq]
-    (long-array seq))
-  (seq->long-long-array [seq]
-    (into-array long-array-type (mapv seq->long-array seq)))
-  (seq->double-array-or-copy [seq]
-    (double-array seq))
-  (seq->long-array-or-copy [seq]
-    (long-array seq)))
+  (double-array [xs]
+    (into-array double-type xs))
+  (double-double-array [xs]
+    (into-array double-array-type (mapv double-array xs)))
+  (long-array [xs]
+    (into-array long-type xs))
+  (long-long-array [xs]
+    (into-array long-array-type (mapv long-array xs)))
+  (double-array-or-copy [xs]
+    (into-array double-array-type xs))
+  (long-array-or-copy [xs]
+    (into-array long-array-type xs))
+  (vec [xs]
+    (if-not (instance? clojure.lang.PersistentVector)
+      (vec xs)
+      xs)))
 
 (extend-type (Class/forName "[D")
   SeqToPrimitive
-  (seq->double-array [arr] arr)
-  (seq->double-array-or-copy [arr]
-    (java.util.Arrays/copyOfRange ^doubles arr 0 (alength ^doubles arr))))
+  (double-array [arr] arr)
+  (double-array-or-copy [arr]
+    (java.util.Arrays/copyOfRange ^doubles arr 0 (alength ^doubles arr)))
+  (vec [arr]
+    (let [n (alength ^doubles arr)]
+      (loop [i 0 acc (transient [])]
+        (if (< i n)
+          (recur (unchecked-inc-int i) (conj! acc (aget ^doubles arr i)))
+          (persistent! acc))))))
 
 (extend-type (Class/forName "[J")
   SeqToPrimitive
-  (seq->long-array [arr] arr)
-  (seq->long-array-or-copy [arr]
-    (java.util.Arrays/copyOfRange ^longs arr 0 (alength ^longs arr))))
+  (long-array [arr] arr)
+  (long-array-or-copy [arr]
+    (java.util.Arrays/copyOfRange ^longs arr 0 (alength ^longs arr)))
+  (vec [arr]
+    (let [n (alength ^longs arr)]
+      (loop [i 0 acc (transient [])]
+        (if (< i n)
+          (recur (unchecked-inc-int i) (conj! acc (aget ^longs arr i)))
+          (persistent! acc))))))
 
 (extend-type (Class/forName "[[D")
   SeqToPrimitive
-  (seq->double-double-array [arr] arr))
+  (double-double-array [arr] arr)
+  (vec [arr]
+    (let [n1 (alength ^"[[D" arr)]
+      (loop [i1 0 acc1 (transient [])]
+        (if (< i1 n1)
+          (let [^doubles iarr (aget ^"[[D" arr i1)
+                n2            (alength iarr)
+                iv            (loop [i2 0 acc2 (transient [])]
+                                (if (< i2 n2)
+                                  (recur (unchecked-inc-int i2) (conj! acc2 (aget iarr i2)))
+                                  (persistent! acc2)))]
+            (recur (unchecked-inc-int i1) (conj! acc1 iv)))
+          (persistent! acc1))))))
 
 (extend-type (Class/forName "[[J")
   SeqToPrimitive
-  (seq->long-long-array [arr] arr))
+  (long-long-array [arr] arr)
+  (vec [arr]
+    (let [n1 (alength ^"[[J" arr)]
+      (loop [i1 0 acc1 (transient [])]
+        (if (< i1 n1)
+          (let [^doubles iarr (aget ^"[[J" arr i1)
+                n2            (alength iarr)
+                iv            (loop [i2 0 acc2 (transient [])]
+                                (if (< i2 n2)
+                                  (recur (unchecked-inc-int i2) (conj! acc2 (aget iarr i2)))
+                                  (persistent! acc2)))]
+            (recur (unchecked-inc-int i1) (conj! acc1 iv)))
+          (persistent! acc1))))))
 
 (defprotocol Series
   (first [arr])
@@ -82,47 +123,47 @@
   (first [coll] (clojure.core/first coll))
   (last [coll]  (clojure.core/last coll))
   (slice [coll start stop]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (slice arr start stop)))
   (-take [coll n]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-take arr n)))
   (-take-last [coll n]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-take-last arr n)))
   (-reductions [coll f]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-reductions arr f)))
   (-every [coll f]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-every arr f)))
   (-some [coll f]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-some arr f)))
   (-map
     ([coll f]
-     (let [arr (seq->double-array coll)]
+     (let [arr (double-array coll)]
        (-map arr f)))
     ([c1 c2 f]
-     (let [a1 (seq->double-array c1)
-           a2 (seq->double-array c2)]
+     (let [a1 (double-array c1)
+           a2 (double-array c2)]
        (-map a1 a2 f)))
     ([c1 c2 c3 f]
-     (let [a1 (seq->double-array c1)
-           a2 (seq->double-array c2)
-           a3 (seq->double-array c3)]
+     (let [a1 (double-array c1)
+           a2 (double-array c2)
+           a3 (double-array c3)]
        (-map a1 a2 a3 f)))
     ([c1 c2 c3 c4 f]
-     (let [a1 (seq->double-array c1)
-           a2 (seq->double-array c2)
-           a3 (seq->double-array c3)
-           a4 (seq->double-array c4)]
+     (let [a1 (double-array c1)
+           a2 (double-array c2)
+           a3 (double-array c3)
+           a4 (double-array c4)]
        (-map a1 a2 a3 a4 f))))
   (-reduce [coll f init]
-    (let [arr (seq->double-array coll)]
+    (let [arr (double-array coll)]
       (-reduce arr f init)))
   (transpose [coll2d]
-    (let [arr2d (seq->double-double-array coll2d)]
+    (let [arr2d (double-double-array coll2d)]
       (transpose arr2d))))
 
 (defn take       [n coll]        (-take coll n       ))
@@ -131,11 +172,11 @@
 (defn every      [pred coll]     (-every coll pred   ))
 (defn some       [pred coll]     (-some  coll pred   ))
 (defn map       ([f c]           (-map c           f ))
-                ([f c1 c2]       (-map c1 c2       f ))
-                ([f c1 c2 c3]    (-map c1 c2 c3    f ))
-                ([f c1 c2 c3 c4] (-map c1 c2 c3 c4 f)))
+  ([f c1 c2]       (-map c1 c2       f ))
+  ([f c1 c2 c3]    (-map c1 c2 c3    f ))
+  ([f c1 c2 c3 c4] (-map c1 c2 c3 c4 f)))
 (defn reduce    ([f coll]        (-reduce coll f 0.0 ))
-                ([f val coll]    (-reduce coll f val)))
+  ([f val coll]    (-reduce coll f val)))
 
 (extend-type (Class/forName "[D")
   Series
@@ -347,3 +388,8 @@
                   (recur (unchecked-inc-int i2)))))
             (recur (unchecked-inc-int i1)))
           ro)))))
+
+(let [coll  (mapv (fn [x] (vec (repeat 10 x))) (range 10))
+      arr2d (double-double-array coll)]
+  [ (apply mapv vector coll)
+   (transpose arr2d)])
