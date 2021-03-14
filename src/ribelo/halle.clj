@@ -170,10 +170,12 @@
 (defn every      [pred coll]     (-every coll pred   ))
 (defn some       [pred coll]     (-some  coll pred   ))
 (defn map       ([f c]           (-map c           f ))
-  ([f c1 c2]       (-map c1 c2       f ))
-  ([f c1 c2 c3]    (-map c1 c2 c3    f ))
-  ([f c1 c2 c3 c4] (-map c1 c2 c3 c4 f)))
-(defn reduce    ([f coll]        (-reduce coll f 0.0 ))
+                ([f c1 c2]       (-map c1 c2       f ))
+                ([f c1 c2 c3]    (-map c1 c2 c3    f ))
+                ([f c1 c2 c3 c4] (-map c1 c2 c3 c4 f)))
+
+(defn reduce
+  ([f coll]        (-reduce (first coll) f (slice arr 1)))
   ([f val coll]    (-reduce coll f val)))
 
 (extend-type (Class/forName "[D")
@@ -263,12 +265,13 @@
                               (aget ^doubles arr3 i)
                               (aget ^doubles arr4 i))))
        r)))
-  (-reduce [arr f init]
-    (let [n (alength ^doubles arr)]
-      (loop [i 0 r (double init)]
-        (if (< i n)
-          (recur (unchecked-inc-int i) (double (f r ^double (aget ^doubles arr i))))
-          r)))))
+  (-reduce
+    ([arr f init]
+     (let [n (alength ^doubles arr)]
+       (loop [i 0 r (double init)]
+         (if (< i n)
+           (recur (unchecked-inc-int i) (double (f r ^double (aget ^doubles arr i))))
+           r))))))
 
 (extend-type (Class/forName "[[D")
   Series
