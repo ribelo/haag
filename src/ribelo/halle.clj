@@ -1,58 +1,54 @@
 (ns ribelo.halle
   (:refer-clojure
-   :exclude [first last take take-last reductions every some map reduce vec double-array long-array])
-  (:require
-   [clojure.core :as clj]))
+   :exclude [first last take take-last reductions every some map reduce]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 
-(def ^:const double-type Double/TYPE)
-(def ^:const double-array-type (Class/forName "[D"))
+(def ^:const double-type               Double/TYPE)
+(def ^:const double-array-type        (Class/forName "[D"))
 (def ^:const double-double-array-type (Class/forName "[[D"))
-(def ^:const long-type Long/TYPE)
-(def ^:const long-array-type (Class/forName "[J"))
-(def ^:const long-long-array-type (Class/forName "[[J"))
+(def ^:const long-type                 Long/TYPE)
+(def ^:const long-array-type          (Class/forName "[J"))
+(def ^:const long-long-array-type     (Class/forName "[[J"))
 
-(defn double-array? [arr] (= (type arr) double-array-type))
+(defn double-array? [arr]        (= (type arr) double-array-type))
 (defn double-double-array? [arr] (= (type arr) double-double-array-type))
-(defn long-array? [arr] (= (type arr) long-array-type))
-(defn long-long-array? [arr] (= (type arr) long-long-array-type))
+(defn long-array? [arr]          (= (type arr) long-array-type))
+(defn long-long-array? [arr]     (= (type arr) long-long-array-type))
 
 (defprotocol SeqToPrimitive
-  (double-array         [xs])
-  (double-double-array  [xs])
-  (long-array           [xs])
-  (long-long-array      [xs])
-  (double-array-or-copy [xs])
-  (long-array-or-copy   [xs])
-  (vec                  [arr]))
+  (->double-array         [xs])
+  (->double-double-array  [xs])
+  (->long-array           [xs])
+  (->long-long-array      [xs])
+  (->double-array-or-copy [xs])
+  (->long-array-or-copy   [xs])
+  (->vec                  [arr]))
 
 (extend-protocol SeqToPrimitive
   java.util.Collection
-  (double-array [xs]
+  (->double-array [xs]
     (into-array double-type xs))
-  (double-double-array [xs]
-    (into-array double-array-type (mapv double-array xs)))
-  (long-array [xs]
+  (->double-double-array [xs]
+    (into-array double-array-type (mapv ->double-array xs)))
+  (->long-array [xs]
     (into-array long-type xs))
-  (long-long-array [xs]
-    (into-array long-array-type (mapv long-array xs)))
-  (double-array-or-copy [xs]
+  (->long-long-array [xs]
+    (into-array long-array-type (mapv ->long-array xs)))
+  (->double-array-or-copy [xs]
     (into-array double-array-type xs))
-  (long-array-or-copy [xs]
+  (->long-array-or-copy [xs]
     (into-array long-array-type xs))
-  (vec [xs]
-    (if-not (instance? clojure.lang.PersistentVector)
-      (vec xs)
-      xs)))
+  (->vec [xs]
+    (if-not (instance? clojure.lang.PersistentVector xs) (vec xs) xs)))
 
 (extend-type (Class/forName "[D")
   SeqToPrimitive
-  (double-array [arr] arr)
-  (double-array-or-copy [arr]
+  (->double-array [arr] arr)
+  (->double-array-or-copy [arr]
     (java.util.Arrays/copyOfRange ^doubles arr 0 (alength ^doubles arr)))
-  (vec [arr]
+  (->vec [arr]
     (let [n (alength ^doubles arr)]
       (loop [i 0 acc (transient [])]
         (if (< i n)
@@ -61,10 +57,10 @@
 
 (extend-type (Class/forName "[J")
   SeqToPrimitive
-  (long-array [arr] arr)
-  (long-array-or-copy [arr]
+  (->long-array [arr] arr)
+  (->long-array-or-copy [arr]
     (java.util.Arrays/copyOfRange ^longs arr 0 (alength ^longs arr)))
-  (vec [arr]
+  (->vec [arr]
     (let [n (alength ^longs arr)]
       (loop [i 0 acc (transient [])]
         (if (< i n)
@@ -73,8 +69,8 @@
 
 (extend-type (Class/forName "[[D")
   SeqToPrimitive
-  (double-double-array [arr] arr)
-  (vec [arr]
+  (->double-double-array [arr] arr)
+  (->vec [arr]
     (let [n1 (alength ^"[[D" arr)]
       (loop [i1 0 acc1 (transient [])]
         (if (< i1 n1)
@@ -89,8 +85,8 @@
 
 (extend-type (Class/forName "[[J")
   SeqToPrimitive
-  (long-long-array [arr] arr)
-  (vec [arr]
+  (->long-long-array [arr] arr)
+  (->vec [arr]
     (let [n1 (alength ^"[[J" arr)]
       (loop [i1 0 acc1 (transient [])]
         (if (< i1 n1)
@@ -125,47 +121,47 @@
   (first [coll] (clojure.core/first coll))
   (last [coll]  (clojure.core/last coll))
   (slice [coll start stop]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (slice arr start stop)))
   (-take [coll n]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-take arr n)))
   (-take-last [coll n]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-take-last arr n)))
   (-reductions [coll f]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-reductions arr f)))
   (-every [coll f]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-every arr f)))
   (-some [coll f]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-some arr f)))
   (-map
     ([coll f]
-     (let [arr (double-array coll)]
+     (let [arr (->double-array coll)]
        (-map arr f)))
     ([c1 c2 f]
-     (let [a1 (double-array c1)
-           a2 (double-array c2)]
+     (let [a1 (->double-array c1)
+           a2 (->double-array c2)]
        (-map a1 a2 f)))
     ([c1 c2 c3 f]
-     (let [a1 (double-array c1)
-           a2 (double-array c2)
-           a3 (double-array c3)]
+     (let [a1 (->double-array c1)
+           a2 (->double-array c2)
+           a3 (->double-array c3)]
        (-map a1 a2 a3 f)))
     ([c1 c2 c3 c4 f]
-     (let [a1 (double-array c1)
-           a2 (double-array c2)
-           a3 (double-array c3)
-           a4 (double-array c4)]
+     (let [a1 (->double-array c1)
+           a2 (->double-array c2)
+           a3 (->double-array c3)
+           a4 (->double-array c4)]
        (-map a1 a2 a3 a4 f))))
   (-reduce [coll f init]
-    (let [arr (double-array coll)]
+    (let [arr (->double-array coll)]
       (-reduce arr f init)))
   (transpose [coll2d]
-    (let [arr2d (double-double-array coll2d)]
+    (let [arr2d (->double-double-array coll2d)]
       (transpose arr2d))))
 
 (defn take       [n coll]        (-take coll n       ))
@@ -199,7 +195,7 @@
      ^doubles arr (Math/max 0 (- (alength ^doubles arr) n)) (alength ^doubles arr)))
   (-reductions [arr f]
     (let [n (alength ^doubles arr)
-          r (clj/double-array n)]
+          r (double-array n)]
       (loop [i 0 b 1.0]
         (if (< i n)
           (let [tmp (double (f b (aget ^doubles arr i)))]
@@ -225,13 +221,13 @@
   (-map
     ([arr f]
      (let [n (alength ^doubles arr)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^doubles arr)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i))))
@@ -239,20 +235,20 @@
   (-map
     ([arr f]
      (let [n (alength ^doubles arr)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^doubles a1)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i))))
        r))
     ([a1 a2 arr3 f]
      (let [n (alength ^doubles a1)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i)
@@ -260,7 +256,7 @@
        r))
     ([a1 a2 arr3 arr4 f]
      (let [n (alength ^doubles a1)
-           r (clj/double-array n)]
+           r (double-array n)]
        (dotimes [i n]
          (aset r i ^double (f (aget ^doubles a1 i)
                               (aget ^doubles a2 i)
@@ -311,7 +307,7 @@
      ^longs arr (Math/max 0 (- (alength ^longs arr) n)) (alength ^longs arr)))
   (-reductions [arr f]
     (let [n (alength ^longs arr)
-          r (clj/long-array n)]
+          r (long-array n)]
       (loop [i 0 b 1]
         (if (< i n)
           (let [tmp (long (f b (aget ^longs arr i)))]
@@ -337,20 +333,20 @@
   (-map
     ([arr f]
      (let [n (alength ^longs arr)
-           r (clj/long-array n)]
+           r (long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs arr i))))
        r))
     ([a1 a2 f]
      (let [n (alength ^longs a1)
-           r (clj/long-array n)]
+           r (long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i))))
        r))
     ([a1 a2 arr3 f]
      (let [n (alength ^longs a1)
-           r (clj/long-array n)]
+           r (long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i)
@@ -358,7 +354,7 @@
        r))
     ([a1 a2 arr3 arr4 f]
      (let [n (alength ^longs a1)
-           r (clj/long-array n)]
+           r (long-array n)]
        (dotimes [i n]
          (aset r i ^long (f (aget ^longs a1 i)
                             (aget ^longs a2 i)
