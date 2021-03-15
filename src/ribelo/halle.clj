@@ -113,16 +113,23 @@
     [arr1 arr2 f]
     [arr1 arr2 arr3 f]
     [arr1 arr2 arr3 arr4 f])
-  (-reduce [arr f init])
+  (-reduce
+    [arr f]
+    [arr f init])
   (transpose [arr2d]))
 
 (extend-protocol Series
   java.util.Collection
   (first [coll] (clojure.core/first coll))
   (last [coll]  (clojure.core/last coll))
-  (slice [coll start stop]
-    (let [arr (->double-array coll)]
-      (slice arr start stop)))
+  (slice
+    ([coll start]
+     (let [arr (->double-array coll)
+           n   (alength ^doubles arr)]
+       (slice arr start n)))
+    ([coll start stop]
+     (let [arr (->double-array coll)]
+       (slice arr start stop))))
   (-take [coll n]
     (let [arr (->double-array coll)]
       (-take arr n)))
@@ -157,9 +164,6 @@
            a3 (->double-array c3)
            a4 (->double-array c4)]
        (-map a1 a2 a3 a4 f))))
-  (-reduce [coll f init]
-    (let [arr (->double-array coll)]
-      (-reduce arr f init)))
   (transpose [coll2d]
     (let [arr2d (->double-double-array coll2d)]
       (transpose arr2d))))
@@ -175,8 +179,8 @@
                 ([f c1 c2 c3 c4] (-map c1 c2 c3 c4 f)))
 
 (defn reduce
-  ([f coll]        (-reduce (first coll) f (slice arr 1)))
-  ([f val coll]    (-reduce coll f val)))
+  ([f coll]        (-reduce (->double-array coll) f))
+  ([f val coll]    (-reduce (->double-array coll) f val)))
 
 (extend-type (Class/forName "[D")
   Series
@@ -266,6 +270,12 @@
                               (aget ^doubles arr4 i))))
        r)))
   (-reduce
+    ([arr f]
+     (let [n (alength ^doubles arr)]
+       (loop [i 1 r (aget ^doubles arr 0)]
+         (if (< i n)
+           (recur (unchecked-inc-int i) (double (f r ^double (aget ^doubles arr i))))
+           r))))
     ([arr f init]
      (let [n (alength ^doubles arr)]
        (loop [i 0 r (double init)]
@@ -363,13 +373,7 @@
                             (aget ^longs a2 i)
                             (aget ^longs arr3 i)
                             (aget ^longs arr4 i))))
-       r)))
-  (-reduce [arr f init]
-    (let [n (alength ^longs arr)]
-      (loop [i 0 r (long init)]
-        (if (< i n)
-          (recur (unchecked-inc-int i) (long (f r ^long (aget ^longs arr i))))
-          r)))))
+       r))))
 
 (extend-type (Class/forName "[[J")
   Series
